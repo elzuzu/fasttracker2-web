@@ -106,3 +106,11 @@ Un usage commercial exigerait de remplacer les 22 bitmaps CC BY-NC-SA par des cr
 originales. Un redessin fidèle ne suffirait pas : il reste une reproduction de l'œuvre de Vogue,
 soumise à la même licence. Des graphismes neufs peuvent reprendre le style (palette, reliefs,
 disposition), pas le dessin lui-même.
+
+## Tip jar
+
+Built by one person, with a lot of help from Claude. If this was useful to you, USDC on Arc to
+**`0xd3fb4e6479749100D876584e7F5c5cC1EEAE51A5`** goes straight towards the subscription that helped write it.
+
+Tips go to this web port only, not to the authors of Fasttracker II or ft2-clone. No tiers, no
+perks, no expectations — it is just nice to receive something.
