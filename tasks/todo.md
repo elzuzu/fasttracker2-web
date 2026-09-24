@@ -23,7 +23,7 @@ Pas de décompilation : le code source existe légalement. On compile ft2-clone 
 - [x] Taille « Auto » adaptée à la fenêtre (pixels physiques, repli fractionnaire)
 - [x] Démos embarquées dans le wasm, installées après l'init du runtime
 - [~] Artifact claude.ai publié (v4) : s'affiche, n'accepte pas d'entrée — abandonné
-- [ ] Hébergement public (Cloudflare Pages…) : décision d'Alex
+- [x] Repo public github.com/elzuzu/fasttracker2-web + GitHub Pages (CI emsdk 6.0.10)
 
 ## Revue
 

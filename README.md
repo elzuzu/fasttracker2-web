@@ -1,5 +1,13 @@
 # Fasttracker II — version web
 
+**▶ Jouer / Play: https://elzuzu.github.io/fasttracker2-web/**
+
+*Fasttracker II in the browser: [ft2-clone](https://github.com/8bitbubsy/ft2-clone) v2.24 by Olav
+"8bitbubsy" Sørensen, a faithful rebuild of FT2 2.08 whose replayer is ported from the original
+source code, compiled to WebAssembly with a handful of browser adaptations. Same 632×400 interface,
+same mixer, same keyboard shortcuts. Files you save stay in your browser; drop modules on the page
+to load them. Non-commercial use only (graphics under CC BY-NC-SA 4.0, see below).*
+
 Fasttracker II dans le navigateur, sans émulation : c'est **ft2-clone v2.24** d'Olav « 8bitbubsy »
 Sørensen compilé en WebAssembly. ft2-clone est la reconstruction fidèle de FT2 2.08 pour DOS ; son
 replayer et une grande partie du code sont portés directement du code source original de Fredrik
@@ -21,6 +29,9 @@ open http://127.0.0.1:8768/
 
 Port 8768 et non 8765 : sur ce Mac, `127.0.0.1:8765` est déjà pris par un `llama-server`.
 
+Chaque push sur `main` recompile avec emsdk 6.0.10 et publie `dist/` sur GitHub Pages
+(`.github/workflows/pages.yml`).
+
 `dist/` est un site statique : n'importe quel hébergement convient (pas besoin d'en-têtes
 COOP/COEP, la version est mono-thread). Le premier build télécharge et compile le port SDL2
 d'Emscripten (~20 s).
@@ -28,7 +39,8 @@ d'Emscripten (~20 s).
 ## Utilisation dans le navigateur
 
 - `$HOME` du programme (`/home/web_user`) est stocké dans IndexedDB : config (`FT2.CFG`) et fichiers
-  sauvés depuis Disk Op. persistent entre les visites. Disk Op. s'ouvre sur `Desktop/`.
+  sauvés depuis Disk Op. persistent entre les visites, dans ce navigateur et pour ce site
+  uniquement. Disk Op. s'ouvre sur `Desktop/`.
 - Charger : glisser-déposer n'importe où sur la page, ou bouton **Load…** (copie dans `Desktop/`
   puis chargement, comme un glisser-déposer sur la fenêtre desktop).
 - Récupérer un fichier sauvé : lien *download* dans la barre après chaque sauvegarde, ou **Files**.
