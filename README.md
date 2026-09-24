@@ -29,8 +29,10 @@ open http://127.0.0.1:8768/
 
 Port 8768 et non 8765 : sur ce Mac, `127.0.0.1:8765` est déjà pris par un `llama-server`.
 
-Chaque push sur `main` recompile avec emsdk 6.0.10 et publie `dist/` sur GitHub Pages
-(`.github/workflows/pages.yml`).
+Publication : GitHub Pages sert la branche `gh-pages` (une seule révision, remplacée à chaque
+publication). `./publish.sh` compile et la pousse depuis ce Mac ; `.github/workflows/pages.yml`
+fait pareil à chaque push sur `main` (emsdk 6.0.10) quand GitHub Actions est disponible sur le
+compte — au 2026-09-24 les jobs ne démarrent pas (« account is locked due to a billing issue »).
 
 `dist/` est un site statique : n'importe quel hébergement convient (pas besoin d'en-têtes
 COOP/COEP, la version est mono-thread). Le premier build télécharge et compile le port SDL2

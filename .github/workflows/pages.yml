@@ -1,3 +1,5 @@
+# Builds the site and publishes it to the gh-pages branch, which GitHub Pages serves
+# (Pages source: "Deploy from a branch", gh-pages, /). publish.sh does the same from a local machine.
 name: Build and deploy to GitHub Pages
 
 on:
@@ -6,12 +8,10 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
-  group: pages
+  group: gh-pages
   cancel-in-progress: false
 
 env:
@@ -43,18 +43,14 @@ jobs:
           source "$HOME/emsdk/emsdk_env.sh"
           ./build.sh
 
-      - uses: actions/configure-pages@v6.0.0
-
-      - uses: actions/upload-pages-artifact@v5.0.0
-        with:
-          path: dist
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v5.0.1
+      - name: Publish to gh-pages
+        run: |
+          mkdir -p "$RUNNER_TEMP/site"
+          cp -R dist/. "$RUNNER_TEMP/site/"
+          cd "$RUNNER_TEMP/site"
+          touch .nojekyll
+          git init -q -b gh-pages
+          git add -A
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -q -m "Built site from main@${GITHUB_SHA::7}"
+          git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" gh-pages
