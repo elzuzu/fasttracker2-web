@@ -972,6 +972,10 @@ bool setupAudio(bool showErrorMsg)
 	if (device != NULL && strcmp(device, DEFAULT_AUDIO_DEV_STR) == 0)
 		device = NULL; // force default device
 
+#ifdef __EMSCRIPTEN__
+	ft2web_setWantedAudioRate(want.freq); // the page creates the audio context at this rate
+#endif
+
 	audio.dev = SDL_OpenAudioDevice(device, 0, &want, &have, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE);
 	if (audio.dev == 0)
 	{

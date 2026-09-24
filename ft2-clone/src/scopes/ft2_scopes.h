@@ -34,6 +34,9 @@ bool testScopesMouseDown(void);
 void drawScopes(void);
 void drawScopeFramework(void);
 bool initScopes(void);
+#ifdef __EMSCRIPTEN__
+void updateScopesWeb(void);
+#endif
 
 // actual scope data
 typedef struct scope_t

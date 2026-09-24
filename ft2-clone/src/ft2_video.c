@@ -367,6 +367,12 @@ void leaveFullscreen(void)
 
 void toggleFullscreen(void)
 {
+#ifdef __EMSCRIPTEN__
+	// browser: the page goes fullscreen and the "window" (canvas) is then resized to fit it
+	ft2web_toggleFullscreen();
+	return;
+#endif
+
 	video.fullscreen ^= 1;
 
 	if (video.fullscreen)
@@ -799,6 +805,16 @@ void setWindowSizeFromConfig(bool updateRenderer)
 	SDL_DisplayMode dm;
 
 	uint8_t oldUpscaleFactor = video.windowModeUpscaleFactor;
+#ifdef __EMSCRIPTEN__
+	if (config.windowFlags & WINSIZE_AUTO)
+	{
+		// fit the web page rather than the screen
+		video.windowModeUpscaleFactor = (uint8_t)ft2web_autoUpscaleFactor();
+		(void)i;
+		(void)dm;
+	}
+	else
+#endif
 	if (config.windowFlags & WINSIZE_AUTO)
 	{
 		int32_t di = SDL_GetWindowDisplayIndex(video.window);
@@ -932,6 +948,10 @@ bool setupWindow(void)
 	if (config.windowFlags & FORCE_VSYNC_OFF)
 		video.vsync60HzPresent = false;
 
+#ifdef __EMSCRIPTEN__
+	video.vsync60HzPresent = false; // frames are paced by hpc_Wait() (requestAnimationFrame)
+#endif
+
 	video.window = SDL_CreateWindow("", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
 		SCREEN_W * video.windowModeUpscaleFactor, SCREEN_H * video.windowModeUpscaleFactor,
 		windowFlags);
@@ -1013,6 +1033,10 @@ bool setupRenderer(void)
 
 void handleRedrawing(void)
 {
+#ifdef __EMSCRIPTEN__
+	updateScopesWeb();
+#endif
+
 	if (!ui.configScreenShown && !ui.helpScreenShown)
 	{
 		if (ui.aboutScreenShown)

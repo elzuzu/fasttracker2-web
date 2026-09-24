@@ -221,7 +221,11 @@ int main(int argc, char *argv[])
 	SDL_ShowWindow(video.window);
 #endif
 
+#ifndef __EMSCRIPTEN__ // browsers only allow fullscreen as a response to user input
 	if (config.windowFlags & START_IN_FULLSCR)
+#else
+	if (false)
+#endif
 	{
 		video.fullscreen = true;
 		enterFullscreen();
@@ -259,6 +263,9 @@ int main(int argc, char *argv[])
 		saveConfig(CONFIG_HIDE_ERRORS);
 
 	cleanUpAndExit();
+#ifdef __EMSCRIPTEN__
+	ft2web_programEnded();
+#endif
 	return 0;
 }
 

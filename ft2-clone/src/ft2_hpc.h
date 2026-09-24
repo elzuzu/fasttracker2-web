@@ -23,3 +23,7 @@ void hpc_SetDurationInHz(hpc_t *hpc, double dHz);
 void hpc_SetDurationInMs(hpc_t *hpc, double dMs);
 void hpc_ResetCounters(hpc_t *hpc);
 void hpc_Wait(hpc_t *hpc);
+
+#ifdef __EMSCRIPTEN__
+bool hpc_Poll(hpc_t *hpc);
+#endif

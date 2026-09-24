@@ -542,8 +542,39 @@ static int32_t scopeThreadFunc(void *ptr)
 	return true;
 }
 
+#ifdef __EMSCRIPTEN__
+/* Browser build (single-threaded): instead of the 64Hz scope thread, the main loop calls this
+** once per video frame, and it performs every scope update that has become due since last time.
+*/
+void updateScopesWeb(void)
+{
+	int32_t updates = 0;
+	while (hpc_Poll(&scopeHpc))
+	{
+		editor.scopeThreadBusy = true;
+		updateScopes();
+		editor.scopeThreadBusy = false;
+
+		if (++updates >= SCOPE_HZ/4) // we were stalled, don't try to catch up with more than 1/4th second
+		{
+			hpc_ResetCounters(&scopeHpc);
+			break;
+		}
+	}
+}
+#endif
+
 bool initScopes(void)
 {
+#ifdef __EMSCRIPTEN__
+	(void)scopeThreadFunc;
+	(void)scopeThread;
+
+	hpc_SetDurationInHz(&scopeHpc, SCOPE_HZ);
+	hpc_ResetCounters(&scopeHpc);
+	return true;
+#endif
+
 	scopeThread = SDL_CreateThread(scopeThreadFunc, "scope thread", NULL);
 	if (scopeThread == NULL)
 	{

@@ -683,6 +683,11 @@ int16_t okBoxThreadSafe(int16_t type, const char *headline, const char *text, vo
 	if (!editor.mainLoopOngoing)
 		return 0; // main loop was not even started yet, bail out.
 
+#ifdef __EMSCRIPTEN__
+	// single-threaded browser build: worker "threads" run on the main thread, so show the request directly
+	return okBox(type, headline, text, checkBoxCallback);
+#endif
+
 	// the amount of time to wait is not important, but close to one video frame makes sense
 	const uint32_t waitTime = (uint32_t)((1000.0 / VBLANK_HZ) + 0.5);
 

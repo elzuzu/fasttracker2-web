@@ -21,6 +21,8 @@
 #include <stdbool.h>
 #include "ft2_hpc.h"
 
+static void setNextEndTime(hpc_t *hpc);
+
 #define DURATION_FRAC_BITS 52 /* more makes little sense */
 #define DURATION_FRAC_SCALE (1ULL << DURATION_FRAC_BITS)
 #define DURATION_FRAC_MASK (DURATION_FRAC_SCALE-1)
@@ -115,6 +117,25 @@ void hpc_Wait(hpc_t *hpc)
 	}
 #endif
 
+#ifdef __EMSCRIPTEN__
+	/* Browser: the thread can't sleep, so yield to the browser one display refresh at a time
+	** until we are close to the deadline (always at least once, so that the frame gets presented).
+	** On a 60Hz display this is exactly one requestAnimationFrame() per frame.
+	*/
+	const uint64_t margin64 = hpcFreq.freq64 / 250; // 4ms
+	do
+	{
+		ft2web_waitAnimationFrame();
+	}
+	while (SDL_GetPerformanceCounter()+margin64 < hpc->endTimeInt);
+
+	// if we got stalled for a while (hidden tab, slow operation), start over instead of catching up
+	if (SDL_GetPerformanceCounter() > hpc->endTimeInt + (hpcFreq.freq64 / 10))
+	{
+		hpc_ResetCounters(hpc);
+		return;
+	}
+#else
 	const uint64_t currTime64 = SDL_GetPerformanceCounter();
 	if (currTime64 < hpc->endTimeInt)
 	{
@@ -130,9 +151,25 @@ void hpc_Wait(hpc_t *hpc)
 		if (microSecsLeft > 0)
 			usleep(microSecsLeft);
 	}
+#endif
 
-	// set next end time
+	setNextEndTime(hpc);
+}
 
+#ifdef __EMSCRIPTEN__
+// non-blocking hpc_Wait(): returns true (and sets the next end time) if the end time has been reached
+bool hpc_Poll(hpc_t *hpc)
+{
+	if (SDL_GetPerformanceCounter() < hpc->endTimeInt)
+		return false;
+
+	setNextEndTime(hpc);
+	return true;
+}
+#endif
+
+static void setNextEndTime(hpc_t *hpc)
+{
 	hpc->endTimeInt += hpc->durationInt;
 
 	// handle fractional part

@@ -3138,7 +3138,9 @@ void playSample(uint8_t chNum, uint8_t insNum, uint8_t smpNum, uint8_t note, uin
 
 	unlockAudio();
 
+#ifndef __EMSCRIPTEN__ // single-threaded browser build: the mixer can't run while we spin, the voice triggers on its next callback
 	while (ch->status & CS_TRIGGER_VOICE); // wait for voice to trigger in mixer
+#endif
 
 	// for sampling playback line in Smp. Ed.
 	editor.curPlayInstr = editor.curInstr;
@@ -3201,7 +3203,9 @@ void playRange(uint8_t chNum, uint8_t insNum, uint8_t smpNum, uint8_t note, uint
 
 	unlockAudio();
 
+#ifndef __EMSCRIPTEN__ // single-threaded browser build: the mixer can't run while we spin, the voice triggers on its next callback
 	while (ch->status & CS_TRIGGER_VOICE); // wait for voice to trigger in mixer
+#endif
 
 	// for sampling playback line in Smp. Ed.
 	editor.curPlayInstr = editor.curInstr;

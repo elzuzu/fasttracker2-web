@@ -856,7 +856,11 @@ void readMouseXY(void)
 		return;
 	}
 
+#ifdef __EMSCRIPTEN__
+	if (true) // browser: there is no desktop coordinate space, mouse coordinates are always canvas-relative
+#else
 	if (video.fullscreen)
+#endif
 	{
 		mouse.buttonState = SDL_GetMouseState(&mx, &my);
 

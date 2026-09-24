@@ -71,6 +71,10 @@ void handleThreadEvents(void)
 
 void handleEvents(void)
 {
+#ifdef __EMSCRIPTEN__
+	ft2web_handleEvents();
+#endif
+
 #ifdef HAS_MIDI
 	// called after MIDI has been initialized
 	if (midi.rescanDevicesFlag)

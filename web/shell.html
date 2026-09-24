@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fasttracker II</title>
+<meta name="description" content="Fasttracker II (ft2-clone v2.24) running in the browser, compiled to WebAssembly.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%23000'/%3E%3Cpath d='M2 3h12v2H2zm0 4h8v2H2zm0 4h10v2H2z' fill='%23d7c357'/%3E%3C/svg%3E">
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #07090c;
+    --bar: #11151b;
+    --bar-line: #232932;
+    --fg: #d4d9e0;
+    --muted: #8a93a0;
+    --accent: #e0c35a;
+    --button: #1a2029;
+    --button-hover: #242c38;
+    --danger: #e0715a;
+    --gutter: 12px;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+    color: var(--fg);
+    font: 13px/1.45 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    overflow: hidden;
+  }
+  header {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 36px;
+    padding: 0 var(--gutter);
+    background: var(--bar);
+    border-bottom: 1px solid var(--bar-line);
+    white-space: nowrap;
+  }
+  .brand { font-weight: 600; letter-spacing: .02em; margin-right: 8px; }
+  .brand small { font-weight: 400; color: var(--muted); margin-left: 6px; }
+  header button {
+    font: inherit;
+    color: var(--fg);
+    background: var(--button);
+    border: 1px solid var(--bar-line);
+    border-radius: 5px;
+    padding: 3px 10px;
+    cursor: pointer;
+  }
+  header button:hover { background: var(--button-hover); }
+  #toast {
+    margin-left: auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--muted);
+    opacity: 0;
+    transition: opacity .25s;
+  }
+  #toast.show { opacity: 1; }
+  #toast a { color: var(--accent); cursor: pointer; text-decoration: underline; }
+  #stage {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    overflow: auto;
+    background: #000;
+  }
+  #stage:fullscreen { background: #000; }
+  /* margin:auto centers the canvas while still allowing scrolling when it's larger than the stage */
+  #canvas {
+    display: block;
+    margin: auto;
+    outline: none;
+    image-rendering: pixelated;
+    cursor: default;
+  }
+  #overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background: #000;
+    color: var(--muted);
+    text-align: center;
+    padding: var(--gutter);
+  }
+  #overlay[hidden] { display: none; }
+  #overlay button {
+    font: inherit;
+    color: #000;
+    background: var(--accent);
+    border: 0;
+    border-radius: 5px;
+    padding: 6px 16px;
+    cursor: pointer;
+  }
+  dialog {
+    width: min(640px, calc(100vw - 2 * var(--gutter)));
+    max-height: calc(100vh - 80px);
+    padding: 0;
+    color: var(--fg);
+    background: var(--bar);
+    border: 1px solid var(--bar-line);
+    border-radius: 8px;
+  }
+  dialog::backdrop { background: rgb(0 0 0 / .6); }
+  dialog header { border-radius: 8px 8px 0 0; }
+  dialog header h2 { font-size: 13px; margin: 0; }
+  dialog header button { margin-left: auto; }
+  .dialog-body { padding: var(--gutter); overflow: auto; max-height: calc(100vh - 140px); }
+  .dialog-body p { margin: 0 0 10px; }
+  .dialog-body a { color: var(--accent); }
+  .muted { color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; }
+  td { padding: 4px 6px; border-bottom: 1px solid var(--bar-line); vertical-align: middle; }
+  td.size { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+  td.actions { text-align: right; white-space: nowrap; }
+  td.name { word-break: break-all; }
+  td.actions button {
+    font: inherit; font-size: 12px; color: var(--fg); background: var(--button);
+    border: 1px solid var(--bar-line); border-radius: 4px; padding: 1px 8px; cursor: pointer;
+  }
+  td.actions button.delete { color: var(--danger); }
+  kbd { font: 12px ui-monospace, monospace; background: var(--button); border: 1px solid var(--bar-line); border-radius: 3px; padding: 0 4px; }
+  @media (max-width: 560px) {
+    .brand small, #toast { display: none; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <span class="brand">Fasttracker II<small>clone v2.24 · WebAssembly</small></span>
+  <button type="button" id="btn-load" tabindex="-1" title="Load modules, instruments or samples (they are also copied to Desktop/)">Load…</button>
+  <button type="button" id="btn-files" tabindex="-1" title="Files stored in this browser: download or delete them">Files</button>
+  <button type="button" id="btn-fullscreen" tabindex="-1" title="Fullscreen (also Alt+Enter)">Fullscreen</button>
+  <button type="button" id="btn-about" tabindex="-1">About</button>
+  <span id="toast" role="status"></span>
+  <input type="file" id="file-input" multiple hidden>
+</header>
+
+<div id="stage">
+  <canvas id="canvas" tabindex="-1"></canvas>
+  <div id="overlay"><span id="overlay-text">Loading…</span></div>
+</div>
+
+<dialog id="files-dialog">
+  <header><h2>Files stored in this browser</h2><button type="button" data-close tabindex="-1">Close</button></header>
+  <div class="dialog-body">
+    <p class="muted">Everything you save from Disk Op. stays here between visits. <code>Desktop/</code> is where Disk Op. opens.</p>
+    <table><tbody id="files-list"></tbody></table>
+  </div>
+</dialog>
+
+<dialog id="about-dialog">
+  <header><h2>About</h2><button type="button" data-close tabindex="-1">Close</button></header>
+  <div class="dialog-body">
+    <p><b>Fasttracker II</b> by Fredrik “Mr.&nbsp;H” Huss and Magnus “Vogue” Högdahl (Triton, 1994–1999).</p>
+    <p>This is <a href="https://github.com/8bitbubsy/ft2-clone" target="_blank" rel="noopener">ft2-clone</a> v2.24 by Olav “8bitbubsy” Sørensen, whose replayer is ported directly from the original FT2 source code. It is compiled to WebAssembly with only a handful of browser adaptations (single-threaded, frames paced by the display, files kept in browser storage).</p>
+    <p>Drop modules, instruments or samples anywhere on the page to load them. Saved files land in the browser's storage: use <b>Files</b> to download them. Browser shortcuts such as <kbd>⌘W</kbd>/<kbd>Ctrl+W</kbd> can't be captured.</p>
+    <p class="muted">Code: BSD 3-Clause (ft2-clone), with minimp3, miniflac and minivorbis under their own licenses. MIDI input is not available in this build. Graphics: Magnus Högdahl, CC BY-NC-SA 4.0 — non-commercial use only.</p>
+  </div>
+</dialog>
+
+<script>
+  var Module = { canvas: document.getElementById('canvas') };
+</script>
+{{{ SCRIPT }}}
+</body>
+</html>

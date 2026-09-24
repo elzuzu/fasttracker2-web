@@ -787,7 +787,9 @@ void sfxPreviewFilter(uint32_t cutoff)
 	ch->realVol = ch->outVol = ch->oldVol = 64;
 	updateVolPanAutoVib(ch);
 
+#ifndef __EMSCRIPTEN__ // single-threaded browser build: the mixer can't run while we spin, the voice triggers on its next callback
 	while (ch->status & CS_TRIGGER_VOICE); // wait for voice to trigger in mixer
+#endif
 	SDL_Delay(1000); // wait 1 second
 
 	// we're done, stop voice and free temporary data

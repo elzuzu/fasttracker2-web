@@ -17,7 +17,11 @@
 #else
 #include <sys/types.h>
 #include <sys/stat.h>
+#ifdef __EMSCRIPTEN__
+#include <ftw.h> // for nftw() in recursiveDelete()
+#else
 #include <fts.h> // for fts_open() and stuff in recursiveDelete()
+#endif
 #include <unistd.h>
 #include <dirent.h>
 #include <errno.h>
@@ -502,6 +506,24 @@ bool fileExistsAnsi(char *str)
 	return (retVal != -1);
 }
 
+#ifdef __EMSCRIPTEN__
+static int32_t nftwDeleteEntry(const char *path, const struct stat *st, int32_t flag, struct FTW *ftwBuf)
+{
+	(void)st;
+	(void)ftwBuf;
+
+	if (flag == FTW_NS || flag == FTW_DNR)
+		return -1;
+
+	return (remove(path) < 0) ? -1 : 0;
+}
+
+static bool deleteDirRecursive(UNICHAR *strU)
+{
+	// depth-first (FTW_DEPTH), so that directories are empty when we get to them
+	return nftw(strU, nftwDeleteEntry, 16, FTW_DEPTH | FTW_PHYS) == 0;
+}
+#else
 static bool deleteDirRecursive(UNICHAR *strU)
 {
 	FTSENT *curr;
@@ -547,6 +569,7 @@ static bool deleteDirRecursive(UNICHAR *strU)
 
 	return ret;
 }
+#endif
 
 static bool makeDirAnsi(char *str)
 {
