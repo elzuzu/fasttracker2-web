@@ -32,6 +32,7 @@ static volatile bool resizeRequested;
 static int dummyThread;
 
 EM_ASYNC_JS(void, ft2web_js_waitAnimationFrame, (void), {
+	Module.ft2Frames = (Module.ft2Frames || 0) + 1;
 	await new Promise((resolve) => {
 		// requestAnimationFrame() never fires in a hidden tab, keep the program ticking slowly instead
 		if (document.hidden)
@@ -48,6 +49,14 @@ EM_JS(void, ft2web_js_fileWritten, (const char *path), {
 
 EM_JS(int, ft2web_js_autoUpscaleFactor, (int w, int h), {
 	return Module.ft2AutoUpscaleFactor ? Module.ft2AutoUpscaleFactor(w, h) : 1;
+});
+
+EM_JS(int, ft2web_js_fixedUpscaleFactor, (int factor), {
+	return Module.ft2FixedUpscaleFactor ? Module.ft2FixedUpscaleFactor(factor) : factor;
+});
+
+EM_JS(double, ft2web_js_canvasCssScale, (int canvasWidth, int screenWidth), {
+	return Module.ft2CanvasCssScale ? Module.ft2CanvasCssScale(canvasWidth) : canvasWidth / screenWidth;
 });
 
 EM_JS(void, ft2web_setWantedAudioRate, (int32_t rate), {
@@ -128,6 +137,17 @@ int32_t ft2web_autoUpscaleFactor(void)
 {
 	int32_t factor = ft2web_js_autoUpscaleFactor(SCREEN_W, SCREEN_H);
 	return CLAMP(factor, 1, 16);
+}
+
+int32_t ft2web_fixedUpscaleFactor(int32_t factor)
+{
+	factor = ft2web_js_fixedUpscaleFactor(factor);
+	return CLAMP(factor, 1, 16);
+}
+
+double ft2web_canvasCssScale(int32_t canvasWidth)
+{
+	return ft2web_js_canvasCssScale(canvasWidth, SCREEN_W);
 }
 
 void ft2web_handleEvents(void)

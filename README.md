@@ -14,10 +14,12 @@ Disk Op., éditeurs d'instruments et de samples, export WAV, Nibbles.
 
 ```sh
 brew install emscripten          # une fois
-./build.sh                       # → dist/ (index.html, index.js, index.wasm, index.data)
-cd dist && python3 -m http.server 8765
-open http://localhost:8765/
+./build.sh                       # → dist/ (index.html, index.js, index.wasm)
+cd dist && python3 -m http.server 8768 --bind 127.0.0.1
+open http://127.0.0.1:8768/
 ```
+
+Port 8768 et non 8765 : sur ce Mac, `127.0.0.1:8765` est déjà pris par un `llama-server`.
 
 `dist/` est un site statique : n'importe quel hébergement convient (pas besoin d'en-têtes
 COOP/COEP, la version est mono-thread). Le premier build télécharge et compile le port SDL2
@@ -33,6 +35,12 @@ d'Emscripten (~20 s).
 - `?song=<url>` charge un module à l'ouverture (l'URL doit autoriser CORS).
 - Trois modules du domaine public sont copiés dans `Desktop/` au premier lancement (voir `demo/`).
 - Plein écran : Alt+Entrée (comme FT2) ou bouton **Fullscreen**.
+- Taille « Auto » : le plus grand nombre entier de pixels physiques par pixel FT2 qui tient dans la
+  page (sur écran Retina, ×1,5, ×2,5… restent nets) ; si cela laisse plus d'un cinquième de la place
+  vide, l'écran est mis à l'échelle pour remplir la page (lissé). Les tailles fixes 1x…4x du Config
+  gardent leur sens desktop. `page#debug` affiche une ligne d'état (images, clics, audio).
+- `build/artifact/` : variante pour un Artifact claude.ai (sans squelette HTML, chargeur inline,
+  export en `.zip` via la capacité `downloads`). Voir limites.
 
 ## Adaptations au navigateur
 
@@ -60,6 +68,10 @@ premier commit pour les voir, +158 lignes au total). La colle navigateur est dan
   peuvent pas être interrompues ; le son se coupe pendant ce temps.
 - Les raccourcis réservés par le navigateur (⌘W/Ctrl+W, ⌘T, ⌘Q…) ne peuvent pas être capturés.
 - Échap ouvre la demande de sortie de FT2, comme sous DOS ; après sortie, la page propose de relancer.
+- Artifact claude.ai (https://claude.ai/artifact/TP72TKoyYwSAxTZCDeYXjd, privé) : l'interface
+  s'affiche mais les clics envoyés par l'automatisation n'y ont aucun effet et une version a figé
+  l'onglet ; la même page dans une iframe cross-origin locale fonctionne. Non résolu, cause côté
+  hôte non observable. Utiliser la version servie normalement.
 
 ## Licences
 

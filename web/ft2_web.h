@@ -36,8 +36,12 @@ int ft2web_fclose(FILE *f);
 #define fopen(path, mode) ft2web_fopen((path), (mode))
 #define fclose(f) ft2web_fclose(f)
 
-// Integer upscaling factor that makes the 632x400 screen fit the page (config "Auto" window size)
-int32_t ft2web_autoUpscaleFactor(void);
+/* The canvas ("window") size is in device pixels: SCREEN_W*factor x SCREEN_H*factor. The page
+** displays it at a CSS size of its choosing (see web/pre.js).
+*/
+int32_t ft2web_autoUpscaleFactor(void); // config "Auto": fits the page
+int32_t ft2web_fixedUpscaleFactor(int32_t factor); // config 1x..4x (in CSS pixels, like desktop points)
+double ft2web_canvasCssScale(int32_t canvasWidth); // CSS pixels per tracker pixel for this canvas width
 
 /* SDL creates its Web Audio context with the browser's default rate. The page makes it use the
 ** rate chosen in the config screen instead (the browser resamples to the hardware rate).

@@ -21,9 +21,12 @@ emcc $OPT -ffast-math -DNDEBUG \
 	-sFORCE_FILESYSTEM -lidbfs.js \
 	-sEXPORTED_FUNCTIONS=_main,_ft2web_dropFile,_ft2web_requestResize,_ft2web_songIsModified,_ft2web_autoSaveConfig \
 	-sEXPORTED_RUNTIME_METHODS=ccall,FS,addRunDependency,removeRunDependency \
-	--preload-file demo@/demos --exclude-file '*.md' \
+	--embed-file demo@/demos --exclude-file '*.md' \
 	--pre-js web/pre.js \
 	--shell-file web/shell.html \
 	-o "$OUT/index.html"
 
 ls -l "$OUT"
+
+# claude.ai Artifact variant of the page (build/artifact/)
+python3 web/make_artifact.py

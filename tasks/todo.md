@@ -20,7 +20,10 @@ Pas de décompilation : le code source existe légalement. On compile ft2-clone 
 - [x] Script `build.sh` (emcc) → `dist/`
 - [x] Shell HTML : écran de démarrage (déblocage audio), canvas net, import/export, glisser-déposer
 - [x] Vérif navigateur : UI identique (capture), lecture XM, clavier, Disk Op, sauvegarde/export
-- [ ] Déploiement / partage (en attente de décision)
+- [x] Taille « Auto » adaptée à la fenêtre (pixels physiques, repli fractionnaire)
+- [x] Démos embarquées dans le wasm, installées après l'init du runtime
+- [~] Artifact claude.ai publié (v4) : s'affiche, n'accepte pas d'entrée — abandonné
+- [ ] Hébergement public (Cloudflare Pages…) : décision d'Alex
 
 ## Revue
 

@@ -72,10 +72,12 @@
 
       mkdirs(CONFIG_DIR);
       mkdirs(DESKTOP);
-      installDemos();
       removeRunDependency('ft2-idbfs');
     });
   });
+
+  // the embedded /demos files only exist once the runtime is initialized (after preRun)
+  Module.onRuntimeInitialized = installDemos;
 
   // The public domain demo modules bundled at /demos are copied to the Desktop once
   function installDemos() {
@@ -157,12 +159,102 @@
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   }
 
-  function download(path) {
+  // ZIP archive holding one file, stored without compression (the file is kept byte for byte)
+  const CRC_TABLE = (() => {
+    const table = new Uint32Array(256);
+    for (let n = 0; n < 256; n++) {
+      let c = n;
+      for (let k = 0; k < 8; k++)
+        c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      table[n] = c >>> 0;
+    }
+    return table;
+  })();
+
+  function crc32(bytes) {
+    let c = 0xFFFFFFFF;
+    for (let i = 0; i < bytes.length; i++)
+      c = CRC_TABLE[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8);
+    return (c ^ 0xFFFFFFFF) >>> 0;
+  }
+
+  function zipOneFile(name, bytes) {
+    const nameBytes = new TextEncoder().encode(name);
+    const crc = crc32(bytes);
+    const now = new Date();
+    const time = (now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1);
+    const date = ((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate();
+
+    const local = new DataView(new ArrayBuffer(30));
+    local.setUint32(0, 0x04034B50, true); // local file header
+    local.setUint16(4, 20, true);         // version needed
+    local.setUint16(6, 0x0800, true);     // UTF-8 file name
+    local.setUint16(8, 0, true);          // stored
+    local.setUint16(10, time, true);
+    local.setUint16(12, date, true);
+    local.setUint32(14, crc, true);
+    local.setUint32(18, bytes.length, true);
+    local.setUint32(22, bytes.length, true);
+    local.setUint16(26, nameBytes.length, true);
+
+    const central = new DataView(new ArrayBuffer(46));
+    central.setUint32(0, 0x02014B50, true); // central directory header
+    central.setUint16(4, 20, true);
+    central.setUint16(6, 20, true);
+    central.setUint16(8, 0x0800, true);
+    central.setUint16(12, time, true);
+    central.setUint16(14, date, true);
+    central.setUint32(16, crc, true);
+    central.setUint32(20, bytes.length, true);
+    central.setUint32(24, bytes.length, true);
+    central.setUint16(28, nameBytes.length, true);
+    central.setUint32(42, 0, true);          // offset of the local header
+
+    const centralOffset = 30 + nameBytes.length + bytes.length;
+    const end = new DataView(new ArrayBuffer(22));
+    end.setUint32(0, 0x06054B50, true); // end of central directory
+    end.setUint16(8, 1, true);
+    end.setUint16(10, 1, true);
+    end.setUint32(12, 46 + nameBytes.length, true);
+    end.setUint32(16, centralOffset, true);
+
+    return new Blob([local, nameBytes, bytes, central, nameBytes, end], { type: 'application/zip' });
+  }
+
+  // Inside a claude.ai artifact, pages can't start downloads themselves: the platform's
+  // "downloads" capability asks the viewer instead, and only accepts common extensions
+  // (not .xm, .wav...), so the file travels inside a .zip there.
+  const artifactHost = typeof window.claude === 'object' && window.claude && typeof window.claude.use === 'function';
+
+  async function download(path) {
+    const name = baseName(path);
     const data = FS.readFile(path);
+
+    if (artifactHost) {
+      const downloads = await window.claude.use('downloads');
+      if (!downloads) {
+        toast('Downloads are not available in this view.');
+        return;
+      }
+      const dot = name.lastIndexOf('.');
+      const zipName = (dot > 0 ? name.substring(0, dot) : name) + '.zip';
+      try {
+        await downloads.save({ filename: zipName, data: zipOneFile(name, data) });
+      } catch (e) {
+        if (e && e.code === 'declined')
+          return;
+        if (e && e.code === 'rate_limited')
+          toast('A download is already waiting for your answer.');
+        else
+          toast('Could not download ' + name + ' here (' + ((e && (e.message || e.code)) || 'unavailable') + ').');
+      }
+      return;
+    }
+
     const url = URL.createObjectURL(new Blob([data], { type: 'application/octet-stream' }));
     const a = document.createElement('a');
     a.href = url;
-    a.download = baseName(path);
+    a.download = name;
     document.body.append(a);
     a.click();
     a.remove();
@@ -178,10 +270,52 @@
     toast('Saved ' + displayPath(path) + ' —', 'download', () => download(path));
   };
 
-  Module.ft2AutoUpscaleFactor = (w, h) => {
+  // ---------- screen size ----------
+  //
+  // The canvas is SCREEN_W*n x SCREEN_H*n device pixels. With "Auto" window size, n is the largest
+  // whole number of device pixels per tracker pixel that fits the page (pixel-perfect: on a 2x
+  // display that allows 1.5x, 2.5x...). When that would leave more than a fifth of the room unused,
+  // the screen is instead scaled to fill the page (smoothed), from the next larger canvas.
+  const SCREEN_W = 632, SCREEN_H = 400;
+  let autoMode = true;
+
+  const dpr = () => window.devicePixelRatio || 1;
+  function fitScale() { // CSS pixels per tracker pixel that fill the stage
     const rect = stage.getBoundingClientRect();
-    return Math.max(1, Math.floor(Math.min(rect.width / w, rect.height / h)));
+    return Math.max(0.1, Math.min(rect.width / SCREEN_W, rect.height / SCREEN_H));
+  }
+  function pixelPerfectFactor() {
+    const exact = Math.floor(fitScale() * dpr() + 1e-6);
+    return exact >= 1 && exact >= 0.8 * fitScale() * dpr() ? exact : 0;
+  }
+
+  Module.ft2AutoUpscaleFactor = () => {
+    autoMode = true;
+    return pixelPerfectFactor() || Math.max(1, Math.ceil(fitScale() * dpr() - 1e-6));
   };
+
+  Module.ft2FixedUpscaleFactor = (factor) => {
+    autoMode = false;
+    return factor * Math.max(1, Math.round(dpr()));
+  };
+
+  Module.ft2CanvasCssScale = (canvasWidth) => {
+    const n = canvasWidth / SCREEN_W;
+    if (!autoMode || n === pixelPerfectFactor())
+      return n / dpr();
+    return fitScale();
+  };
+
+  function applyCanvasCss() {
+    if (!canvas.width)
+      return;
+    const scale = Module.ft2CanvasCssScale(canvas.width);
+    const devicePixels = scale * dpr();
+    canvas.style.width = (SCREEN_W * scale) + 'px';
+    canvas.style.height = (SCREEN_H * scale) + 'px';
+    canvas.style.imageRendering = Math.abs(devicePixels - Math.round(devicePixels)) < 1e-3 ? 'pixelated' : 'auto';
+  }
+  new MutationObserver(applyCanvasCss).observe(canvas, { attributes: true, attributeFilter: ['width', 'height'] });
 
   Module.ft2ToggleFullscreen = () => {
     if (document.fullscreenElement)
@@ -385,9 +519,16 @@
       del.textContent = 'Delete';
       del.className = 'delete';
       del.tabIndex = -1;
+      // two-step delete: the first click arms the button for a few seconds
+      let armTimer = 0;
       del.addEventListener('click', () => {
-        if (!confirm('Delete ' + displayPath(file.path) + ' from browser storage?'))
+        if (!del.classList.contains('armed')) {
+          del.classList.add('armed');
+          del.textContent = 'Really delete?';
+          armTimer = setTimeout(() => { del.classList.remove('armed'); del.textContent = 'Delete'; }, 4000);
           return;
+        }
+        clearTimeout(armTimer);
         try { FS.unlink(file.path); } catch (e) { /* already gone */ }
         schedulePersist();
         showFiles();
@@ -413,11 +554,35 @@
     loadFiles(e.dataTransfer.files);
   });
 
+  // page#debug: a status line for diagnosing the page where the developer tools can't reach it
+  if (location.hash === '#debug') {
+    const line = document.createElement('div');
+    line.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:9;padding:2px 8px;font:11px ui-monospace,monospace;background:#000c;color:#9f9;pointer-events:none;white-space:pre-wrap';
+    document.body.append(line);
+    let pointers = 0, keys = 0, lastError = '';
+    window.addEventListener('pointerdown', () => pointers++, true);
+    window.addEventListener('keydown', () => keys++, true);
+    window.addEventListener('error', (e) => { lastError = String(e.message || e.error); });
+    window.addEventListener('unhandledrejection', (e) => { lastError = 'promise: ' + String(e.reason && (e.reason.message || e.reason)); });
+    const started = performance.now();
+    setInterval(() => {
+      const ctx = Module.SDL2 && Module.SDL2.audioContext;
+      line.textContent = 't ' + ((performance.now() - started) / 1000).toFixed(1) + 's · frames ' + (Module.ft2Frames | 0) +
+        ' · pointer ' + pointers + ' · keys ' + keys + ' · hidden ' + document.hidden + ' · focus ' + document.hasFocus() +
+        ' · audio ' + (ctx ? ctx.state + ' ' + ctx.sampleRate : 'none') + ' · persistent ' + persistent +
+        ' · claude ' + artifactHost + (lastError ? '\nerror: ' + lastError : '');
+    }, 250);
+  }
+
   // the tracker uses the right mouse button everywhere
   canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
   // keep the "Auto" window size fitted to the page
-  const requestResize = () => { if (Module._ft2web_requestResize) Module._ft2web_requestResize(); };
+  const requestResize = () => {
+    applyCanvasCss(); // fractional scaling follows the page right away, the canvas follows next frame
+    if (Module._ft2web_requestResize)
+      Module._ft2web_requestResize();
+  };
   window.addEventListener('resize', requestResize);
   document.addEventListener('fullscreenchange', requestResize);
 

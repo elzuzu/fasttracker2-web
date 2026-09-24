@@ -335,6 +335,10 @@ static void updateRenderSizeVars(void)
 
 	// "hardware mouse" calculations
 	video.mouseCursorUpscaleFactor = MIN(video.renderW / SCREEN_W, video.renderH / SCREEN_H);
+#ifdef __EMSCRIPTEN__
+	// the browser draws "hardware" cursors in CSS pixels, scale them like the displayed screen
+	video.mouseCursorUpscaleFactor = (uint32_t)MAX(1, (int32_t)(ft2web_canvasCssScale(video.renderW) + 0.5));
+#endif
 	createMouseCursors();
 }
 
@@ -806,13 +810,19 @@ void setWindowSizeFromConfig(bool updateRenderer)
 
 	uint8_t oldUpscaleFactor = video.windowModeUpscaleFactor;
 #ifdef __EMSCRIPTEN__
+	/* Browser: the "window" size is in device pixels. "Auto" fits the page (see web/pre.js), and the
+	** fixed sizes are multiplied by the device pixel ratio so that 2x looks like 2x on the desktop.
+	*/
 	if (config.windowFlags & WINSIZE_AUTO)
 	{
-		// fit the web page rather than the screen
 		video.windowModeUpscaleFactor = (uint8_t)ft2web_autoUpscaleFactor();
 		(void)i;
 		(void)dm;
 	}
+	else if (config.windowFlags & WINSIZE_1X) video.windowModeUpscaleFactor = (uint8_t)ft2web_fixedUpscaleFactor(1);
+	else if (config.windowFlags & WINSIZE_2X) video.windowModeUpscaleFactor = (uint8_t)ft2web_fixedUpscaleFactor(2);
+	else if (config.windowFlags & WINSIZE_3X) video.windowModeUpscaleFactor = (uint8_t)ft2web_fixedUpscaleFactor(3);
+	else if (config.windowFlags & WINSIZE_4X) video.windowModeUpscaleFactor = (uint8_t)ft2web_fixedUpscaleFactor(4);
 	else
 #endif
 	if (config.windowFlags & WINSIZE_AUTO)
@@ -922,7 +932,11 @@ bool setupWindow(void)
 
 	video.vsync60HzPresent = false;
 
+#ifdef __EMSCRIPTEN__
+	uint32_t windowFlags = 0; // browser: the canvas is sized in device pixels and the page scales it with CSS
+#else
 	uint32_t windowFlags = SDL_WINDOW_ALLOW_HIGHDPI;
+#endif
 #if defined (__APPLE__) || defined (_WIN32) // yet another quirk!
 	windowFlags |= SDL_WINDOW_HIDDEN;
 #endif

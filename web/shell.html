@@ -77,7 +77,6 @@
     display: block;
     margin: auto;
     outline: none;
-    image-rendering: pixelated;
     cursor: default;
   }
   #overlay {
@@ -130,9 +129,12 @@
     border: 1px solid var(--bar-line); border-radius: 4px; padding: 1px 8px; cursor: pointer;
   }
   td.actions button.delete { color: var(--danger); }
+  td.actions button.delete.armed { color: var(--bg); background: var(--danger); border-color: var(--danger); }
   kbd { font: 12px ui-monospace, monospace; background: var(--button); border: 1px solid var(--bar-line); border-radius: 3px; padding: 0 4px; }
   @media (max-width: 560px) {
     .brand small, #toast { display: none; }
+    header { gap: 4px; }
+    header button { padding: 3px 7px; }
   }
 </style>
 </head>
