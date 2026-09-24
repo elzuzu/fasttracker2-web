@@ -73,9 +73,22 @@ premier commit pour les voir, +158 lignes au total). La colle navigateur est dan
   l'onglet ; la même page dans une iframe cross-origin locale fonctionne. Non résolu, cause côté
   hôte non observable. Utiliser la version servie normalement.
 
-## Licences
+## Licences et publication
 
-- Code ft2-clone : BSD 3-Clause (`ft2-clone/LICENSE`), bibliothèques tierces sous leurs licences
-  (`ft2-clone/LICENSES.txt`).
-- Graphismes : Magnus Högdahl, **CC BY-NC-SA 4.0 — usage non commercial uniquement**.
-- Modules de démonstration : domaine public (`demo/README.md`).
+| Élément | Licence | Conséquence |
+|---|---|---|
+| Code ft2-clone (dont le code FT2 original porté) | BSD 3-Clause | tout usage, avis de copyright à conserver |
+| Logo « Fasttracker II » de l'écran About, logo MIDI | BSD 3-Clause (redessinés par 8bitbubsy) | tout usage |
+| Les 22 autres bitmaps (polices, badges, curseurs, widgets, Nibbles) de Magnus « Vogue » Högdahl | CC BY-NC-SA 4.0 | partage **non commercial** uniquement, crédit obligatoire, modifications sous la même licence |
+| SDL 2, Emscripten, musl, minimp3, miniflac, minivorbis | zlib, MIT, MIT, CC0, 0BSD, type BSD | avis à conserver |
+| Modules de démonstration | domaine public (`demo/README.md`) | aucune |
+
+Publier le site gratuitement (Cloudflare Pages, GitHub Pages, serveur perso…) est donc permis tel
+quel, à condition de ne pas en faire un usage commercial (publicité, accès payant, vente). Le
+build place tous les textes de licence dans `dist/licenses/` (`NOTICE.txt` résume qui détient quoi)
+et la boîte **About** de la page donne les crédits et le lien vers la licence CC.
+
+Un usage commercial exigerait de remplacer les 22 bitmaps CC BY-NC-SA par des créations
+originales. Un redessin fidèle ne suffirait pas : il reste une reproduction de l'œuvre de Vogue,
+soumise à la même licence. Des graphismes neufs peuvent reprendre le style (palette, reliefs,
+disposition), pas le dessin lui-même.

@@ -1,0 +1,44 @@
+Fasttracker II clone v2.24 — WebAssembly build
+==============================================
+
+This page runs ft2-clone by Olav "8bitbubsy" Sørensen (https://github.com/8bitbubsy/ft2-clone),
+compiled to WebAssembly. Fasttracker II was made by Fredrik "Mr. H" Huss and Magnus "Vogue"
+Högdahl (Triton, 1994-1999). The full license texts are in this directory.
+
+Program code
+------------
+ft2-clone, including the parts ported from the original Fasttracker II source code with the
+authors' permission: BSD 3-Clause License, Copyright (c) 2016-2026, Olav Sørensen.
+See ft2-clone-BSD-3-Clause.txt.
+
+Graphics
+--------
+The bitmaps (fonts, logo badges, buttons, check boxes, radio buttons, mouse cursors, piano keys,
+loop pins, scope symbols, vibrato waveforms, Nibbles logo and stages) are by Magnus "Vogue"
+Högdahl, some of them hand-edited by Olav Sørensen, and are licensed under the Creative Commons
+Attribution-NonCommercial-ShareAlike 4.0 International License
+(https://creativecommons.org/licenses/by-nc-sa/4.0/). See graphics-CC-BY-NC-SA-4.0.txt.
+They are used here unmodified, as they are distributed with ft2-clone v2.24.
+
+Because of these graphics, this build may only be shared for non-commercial purposes: no
+advertising, no paid access, no sale. Adapted versions of the graphics must be shared under the
+same license.
+
+Two bitmaps are not covered by that license: the large "Fasttracker II" logo of the About screen
+(ft2AboutLogo.bmp) and the MIDI logo (midiLogo.bmp) were redrawn by Olav Sørensen and are under
+the BSD 3-Clause License, like the code.
+
+Libraries compiled into this build
+----------------------------------
+- SDL 2.32.10 — zlib License, Copyright (C) 1997-2025 Sam Lantinga. See SDL2-zlib.txt.
+- Emscripten runtime and system libraries — MIT License (dual MIT / University of Illinois NCSA),
+  Copyright (c) 2010-2014 Emscripten authors. See emscripten-MIT.txt.
+- musl libc — MIT License, Copyright (c) 2005-2020 Rich Felker, et al. See musl-MIT.txt.
+- minimp3 (CC0-1.0), miniflac (BSD 0-Clause), minivorbis (BSD-like). See sample-loaders.txt.
+
+Demo songs
+----------
+Copied to Desktop/ on first use, all released under the Public Domain license on The Mod Archive:
+- "Bit Loader" by Drozerix — https://modarchive.org/index.php?request=view_by_moduleid&query=178415
+- "Computer_Adventures!" by Drozerix — https://modarchive.org/index.php?request=view_by_moduleid&query=173937
+- "Crusaders" by JAM — https://modarchive.org/index.php?request=view_by_moduleid&query=177809

@@ -29,5 +29,6 @@ body = body.replace('{{{ SCRIPT }}}', '<script>\n' + loader + '\n</script>')
 
 (out / 'index.html').write_text(title + '\n' + style + '\n' + body.strip() + '\n')
 shutil.copyfile(dist / 'index.wasm', out / 'index.wasm')
+shutil.copytree(dist / 'licenses', out / 'licenses', dirs_exist_ok=True)
 
 print('artifact page:', out / 'index.html')
